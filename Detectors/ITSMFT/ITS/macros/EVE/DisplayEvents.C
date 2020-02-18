@@ -52,7 +52,7 @@ class Data
 {
  public:
   void loadData(int entry);
-  void displayData(int entry, int chip);
+  void displayData(int entry, int chip, bool onlyMC);
   int getLastEvent() const { return mLastEvent; }
   void setRawPixelReader(std::string input)
   {
@@ -89,6 +89,8 @@ class Data
   std::vector<Cluster>* mClusterBuffer = nullptr;
   gsl::span<Cluster> mClusters;
   std::vector<o2::itsmft::ROFRecord>* mClustersROF = nullptr;
+  o2::dataformats::MCTruthContainer<o2::MCCompLabel>* mClusterLab = nullptr;
+  int mClusterEntry = 0;
   std::vector<o2::its::TrackITS>* mTrackBuffer = nullptr;
   std::vector<int>* mClIdxBuffer = nullptr;
   gsl::span<o2::its::TrackITS> mTracks;
@@ -107,11 +109,12 @@ class Data
   TEveElementList* mChip = nullptr;
   TEveElement* getEveChipDigits(int chip);
   TEveElement* getEveChipClusters(int chip);
-  TEveElement* getEveClusters();
+  TEveElement* getEveClusters(bool onlyMC);
   TEveElement* getEveTracks();
 };
 
 std::vector<Data> evdata;
+bool drawMConly = false;
 
 void Data::loadDigits()
 {
@@ -169,6 +172,8 @@ void Data::setClusTree(TTree* tree)
   }
   tree->SetBranchAddress("ITSCluster", &mClusterBuffer);
   tree->SetBranchAddress("ITSClustersROF", &mClustersROF);
+  if (tree->GetBranch("ITSClusterMCTruth"))
+    tree->SetBranchAddress("ITSClusterMCTruth", &mClusterLab);
   tree->GetEntry(0);
   mClusTree = tree;
 
@@ -186,6 +191,7 @@ void Data::loadClusters(int entry)
     last = first + rof.getNEntries();
   }
   mClusters = gsl::make_span(&(*mClusterBuffer)[first], last - first);
+  mClusterEntry = first;
 
   //std::cout << "Number of ITSClusters: " << mClusters.size() << '\n';
 }
@@ -317,7 +323,7 @@ TEveElement* Data::getEveChipClusters(int chip)
   return nullptr;
 }
 
-TEveElement* Data::getEveClusters()
+TEveElement* Data::getEveClusters(bool onlyMC)
 {
   if (mClusters.empty())
     return nullptr;
@@ -326,6 +332,12 @@ TEveElement* Data::getEveClusters()
   TEvePointSet* clusters = new TEvePointSet("clusters");
   clusters->SetMarkerColor(kBlue);
   for (const auto& c : mClusters) {
+    if (mClusterLab && onlyMC) {
+      const auto& lab = (mClusterLab->getLabels(mClusterEntry))[0];
+      mClusterEntry++;
+      if (!lab.isValid() || lab.getSourceID() == 99) // Clusters from 99 source correspond to QED electrons
+        continue;
+    }
     const auto& gloC = c.getXYZGloRot(*gman);
     clusters->SetNextPoint(gloC.X(), gloC.Y(), gloC.Z());
   }
@@ -371,7 +383,7 @@ TEveElement* Data::getEveTracks()
   return tracks;
 }
 
-void Data::displayData(int entry, int chip)
+void Data::displayData(int entry, int chip, bool onlyMC)
 {
   std::string ename("Part of Event #");
   ename += std::to_string(entry);
@@ -396,7 +408,7 @@ void Data::displayData(int entry, int chip)
   }
 
   // Event display
-  auto clusters = getEveClusters();
+  auto clusters = getEveClusters(onlyMC);
   auto tracks = getEveTracks();
 
   delete mEvent;
@@ -431,7 +443,7 @@ void load(int entry, int chip)
     }
 
     evdat.loadData(entry);
-    evdat.displayData(entry, chip);
+    evdat.displayData(entry, chip, drawMConly);
   }
 }
 
@@ -440,8 +452,12 @@ void init(int entry = 0, int chip = 13,
           bool rawdata = false,
           const std::vector<std::string> clusfiles = {"data-ep4-link0"},
           std::string tracfile = "o2trac_its.root",
-          std::string inputGeom = "O2geometry.root")
+          std::string inputGeom = "O2geometry.root",
+          bool setDrawMConly = false)
 {
+  // flag to draw only MC truth
+  drawMConly = setDrawMConly;
+
   TEveManager::Create(kTRUE, "V");
   TEveBrowser* browser = gEve->GetBrowser();
 
@@ -580,7 +596,7 @@ void loadChip()
   auto event = gEntry->GetNumberEntry()->GetIntNumber();
   auto chip = gChipID->GetNumberEntry()->GetIntNumber();
   for (auto& evdat : evdata) {
-    evdat.displayData(event, chip);
+    evdat.displayData(event, chip, drawMConly);
   }
 }
 
