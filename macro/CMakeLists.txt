@@ -60,6 +60,7 @@ install(FILES CheckClusters_mft.C
               run_sim_tof.C
               run_sim_tpc.C
               run_trac_ca_its.C
+              run_trac_ca_its_cosmics.C
               run_trac_its.C
               run_trac_mft.C
 	      CreateBCPattern.C
@@ -410,6 +411,11 @@ o2_add_test_root_macro(run_sim_tpc.C
 
 # FIXME: move to subsystem dir
 o2_add_test_root_macro(run_trac_ca_its.C
+                       PUBLIC_LINK_LIBRARIES O2::GPUTracking
+                       LABELS its COMPILE_ONLY)
+
+# FIXME: move to subsystem dir
+o2_add_test_root_macro(run_trac_ca_its_cosmics.C
                        PUBLIC_LINK_LIBRARIES O2::GPUTracking
                        LABELS its COMPILE_ONLY)
 
