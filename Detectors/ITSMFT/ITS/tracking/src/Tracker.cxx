@@ -427,6 +427,14 @@ void Tracker::traverseCellsTree(const int currentCellId, const int currentLayerI
 
       const int neighbourCellId =
         mPrimaryVertexContext->getCellsNeighbours()[currentLayerId - 1][currentCellId][iNeighbourCell];
+      int numNeighbourCells{static_cast<int>(
+        mPrimaryVertexContext->getCells()[currentLayerId - 1].size())};
+
+      if (std::abs(neighbourCellId) >= numNeighbourCells) {
+        std::cout<<"\nBAD INDEXING FROM getCellsNeighbours, index "<<neighbourCellId<<"\n\n";
+        continue;
+      }
+
       const Cell& neighbourCell = mPrimaryVertexContext->getCells()[currentLayerId - 1][neighbourCellId];
 
       if (currentCellLevel - 1 != neighbourCell.getLevel()) {
