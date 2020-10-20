@@ -159,8 +159,6 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   TTree outTree("o2sim", "CA ITS Tracks");
   std::vector<o2::its::TrackITS> tracksITS, *tracksITSPtr = &tracksITS;
   std::vector<int> trackClIdx, *trackClIdxPtr = &trackClIdx;
-  std::vector<o2::itsmft::ROFRecord> vertROFvec, *vertROFvecPtr = &vertROFvec;
-  std::vector<Vertex> vertices, *verticesPtr = &vertices;
 
   std::vector<o2::MCCompLabel> trackLabels, *trackLabelsPtr = &trackLabels;
   outTree.Branch("ITSTrack", &tracksITSPtr);
@@ -171,8 +169,6 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   if (mc2rofs) {
     outTree.Branch("ITSTracksMC2ROF", &mc2rofs);
   }
-  outTree.Branch("Vertices", &verticesPtr);
-  outTree.Branch("VerticesROF", &vertROFvecPtr);
 
   // debug and info
   int roFrameCounter{0};
@@ -205,8 +201,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
     auto clSpan = gsl::span(cclusters->data(), cclusters->size());
 
     for (auto& rof : *rofs) {
-      if(roFrameCounter % 10000 == 0) {
-        std::cout<<std::endl<<"PROCESSING ROF: "<<roFrameCounter<<std::endl;
+      if(roFrameCounter % 10000000 == 0) {
+        std::cout<<"PROCESSING ROF: "<<roFrameCounter<<std::endl;
       }
       roFrameCounter++;
 
@@ -219,12 +215,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
       o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
 
       // define a dummy vertex (0,0,0)
-      auto& vtxROF = vertROFvec.emplace_back(rof); // register entry and number of vertices in the
-      vtxROF.setFirstEntry(vertices.size());       // dedicated ROFRecord
-      vtxROF.setNEntries(1);
       Vertex dummyVtx = Vertex(Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
       dummyVtx.setTimeStamp(event.getROFrameId());
-      vertices.push_back(dummyVtx);
       // std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
       event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
       
@@ -264,7 +256,6 @@ void run_trac_ca_its_cosmics(std::string path = "./",
 
   std::cout << "\nTracks/Frames: " << numTotTracks << '/' << roFrameCounter << std::endl;
   std::cout << "Rate: " << numTotTracks/22e-6/roFrameCounter << " (tracks/sec)\n";
-
 }
 
 #endif
