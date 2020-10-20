@@ -37,9 +37,9 @@
 #include "SimulationDataFormat/MCCompLabel.h"
 #include "SimulationDataFormat/MCTruthContainer.h"
 
-#include "GPU/GPUO2Interface.h"
-#include "GPU/GPUReconstruction.h"
-#include "GPU/GPUChainITS.h"
+// #include "GPU/GPUO2Interface.h"
+// #include "GPU/GPUReconstruction.h"
+// #include "GPU/GPUChainITS.h"
 
 #include <TGraph.h>
 
@@ -139,10 +139,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
     itsClusters.SetBranchAddress("ITSClustersMC2ROF", &mc2rofs);
   }
 
-  itsClusters.GetEntry(0);
-
   //-------------------------------------------------
-
   o2::itsmft::TopologyDictionary dict;
   if (dictfile.empty()) {
     dictfile = o2::base::NameConf::getDictionaryFileName(o2::detectors::DetID::ITS, "", ".bin");
@@ -156,7 +153,6 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   }
 
   //-------------------------------------------------
-
   std::vector<o2::its::TrackITSExt> tracks;
   // create/attach output tree
   TFile outFile((path + outputfile).data(), "recreate");
@@ -178,8 +174,9 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   outTree.Branch("Vertices", &verticesPtr);
   outTree.Branch("VerticesROF", &vertROFvecPtr);
 
+  // debug and info
   int roFrameCounter{0};
-
+  int numTotTracks{0}; 
   std::vector<double> ncls;
   std::vector<double> time;
 
@@ -188,9 +185,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   trackParams[0].MinTrackLength = 3;
   trackParams[0].TrackletMaxDeltaPhi = o2::its::constants::math::Pi * 0.5f;
   for (int iLayer = 0; iLayer < trackParams[0].TrackletsPerRoad(); iLayer++) {
-    trackParams[0].TrackletMaxDeltaZ[iLayer] = trackParams[0].LayerZ[iLayer + 1];
+    trackParams[0].TrackletMaxDeltaZ[iLayer] = trackParams[0].LayerZ[iLayer + 1]; // trackParams[0].TrackletMaxDeltaZ[iLayer] = 10.f;
     memParams[0].TrackletsMemoryCoefficients[iLayer] = 0.5f;
-    // trackParams[0].TrackletMaxDeltaZ[iLayer] = 10.f;
   }
   for (int iLayer = 0; iLayer < trackParams[0].CellsPerRoad(); iLayer++) {
     trackParams[0].CellMaxDCA[iLayer] = 10000.f;  //cm
@@ -199,53 +195,63 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   }
 
   tracker.setParameters(memParams, trackParams);
+  int numEvents = itsClusters.GetEntries();
+  // int numEvents = 1;
 
-  int currentEvent = -1;
-  gsl::span<const unsigned char> patt(patterns->data(), patterns->size());
-  auto pattIt = patt.begin();
-  auto clSpan = gsl::span(cclusters->data(), cclusters->size());
+  for(int ev{0}; ev < numEvents; ev++) {
+    itsClusters.GetEntry(ev);
+    gsl::span<const unsigned char> patt(patterns->data(), patterns->size());
+    auto pattIt = patt.begin();
+    auto clSpan = gsl::span(cclusters->data(), cclusters->size());
 
-  for (auto& rof : *rofs) {
-
-    std::cout<<std::endl<<"PROCESSING ROF: "<<roFrameCounter<<std::endl<<std::endl;
-    
-    auto start = std::chrono::steady_clock::now();
-    auto it = pattIt;
-    o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
-
-    // define a dummy vertex (0,0,0)
-    auto& vtxROF = vertROFvec.emplace_back(rof); // register entry and number of vertices in the
-    vtxROF.setFirstEntry(vertices.size());       // dedicated ROFRecord
-    vtxROF.setNEntries(1);
-    Vertex dummyVtx = Vertex(Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
-    dummyVtx.setTimeStamp(event.getROFrameId());
-    vertices.push_back(dummyVtx);
-    std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
-    event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
-    
-    trackClIdx.clear();
-    tracksITS.clear();
-    tracker.clustersToTracks(event);
-
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double, std::milli> diff_t{end - start};
-
-    ncls.push_back(event.getTotalClusters());
-    time.push_back(diff_t.count());
-
-    tracks.swap(tracker.getTracks());
-    for (auto& trc : tracks) {
-      trc.setFirstClusterEntry(trackClIdx.size()); // before adding tracks, create final cluster indices
-      int ncl = trc.getNumberOfClusters();
-      for (int ic = 0; ic < ncl; ic++) {
-        trackClIdx.push_back(trc.getClusterIndex(ic));
+    for (auto& rof : *rofs) {
+      if(roFrameCounter % 10000 == 0) {
+        std::cout<<std::endl<<"PROCESSING ROF: "<<roFrameCounter<<std::endl;
       }
-      tracksITS.emplace_back(trc);
-    }
+      roFrameCounter++;
 
-    trackLabels = tracker.getTrackLabels(); /// FIXME: assignment ctor is not optimal.
-    outTree.Fill();
-    roFrameCounter++;
+      if (rof.getNEntries() == 0) {
+        continue;
+      }
+      
+      auto start = std::chrono::steady_clock::now();
+      auto it = pattIt;
+      o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
+
+      // define a dummy vertex (0,0,0)
+      auto& vtxROF = vertROFvec.emplace_back(rof); // register entry and number of vertices in the
+      vtxROF.setFirstEntry(vertices.size());       // dedicated ROFRecord
+      vtxROF.setNEntries(1);
+      Vertex dummyVtx = Vertex(Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
+      dummyVtx.setTimeStamp(event.getROFrameId());
+      vertices.push_back(dummyVtx);
+      // std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
+      event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
+      
+      trackClIdx.clear();
+      tracksITS.clear();
+      tracker.clustersToTracks(event);
+
+      auto end = std::chrono::steady_clock::now();
+      std::chrono::duration<double, std::milli> diff_t{end - start};
+
+      ncls.push_back(event.getTotalClusters());
+      time.push_back(diff_t.count());
+
+      numTotTracks += tracker.getTracks().size();
+      tracks.swap(tracker.getTracks());
+      for (auto& trc : tracks) {
+        trc.setFirstClusterEntry(trackClIdx.size()); // before adding tracks, create final cluster indices
+        int ncl = trc.getNumberOfClusters();
+        for (int ic = 0; ic < ncl; ic++) {
+          trackClIdx.push_back(trc.getClusterIndex(ic));
+        }
+        tracksITS.emplace_back(trc);
+      }
+
+      trackLabels = tracker.getTrackLabels(); /// FIXME: assignment ctor is not optimal.
+      outTree.Fill();
+    }
   }
 
   outFile.cd();
@@ -255,6 +261,10 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   TGraph* graph = new TGraph(ncls.size(), ncls.data(), time.data());
   graph->SetMarkerStyle(20);
   graph->Draw("AP");
+
+  std::cout << "\nTracks/Frames: " << numTotTracks << '/' << roFrameCounter << std::endl;
+  std::cout << "Rate: " << numTotTracks/22e-6/roFrameCounter << " (tracks/sec)\n";
+
 }
 
 #endif
