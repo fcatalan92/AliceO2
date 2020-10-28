@@ -43,7 +43,6 @@
 
 #include <TGraph.h>
 
-// #include "ITStracking/Constants.h"
 #include "ITStracking/Configuration.h"
 
 using namespace o2::gpu;
@@ -99,8 +98,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   LOG(INFO) << "ITS is in " << (isContITS ? "CONTINUOS" : "TRIGGERED") << " readout mode";
 
   auto gman = o2::its::GeometryTGeo::Instance();
-  gman->fillMatrixCache(o2::utils::bit2Mask(o2::TransformType::T2L, o2::TransformType::T2GRot,
-                                            o2::TransformType::L2G)); // request cached transforms
+  gman->fillMatrixCache(o2::math_utils::bit2Mask(o2::math_utils::TransformType::T2L, o2::math_utils::TransformType::T2GRot,
+                                                 o2::math_utils::TransformType::L2G)); // request cached transforms
 
 
   //>>>---------- attach input data --------------->>>
@@ -215,7 +214,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
       o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
 
       // define a dummy vertex (0,0,0)
-      Vertex dummyVtx = Vertex(Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
+      Vertex dummyVtx = Vertex(o2::math_utils::Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
       dummyVtx.setTimeStamp(event.getROFrameId());
       // std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
       event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
