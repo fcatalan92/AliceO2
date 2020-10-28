@@ -181,7 +181,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   trackParams[0].TrackletMaxDeltaPhi = o2::its::constants::math::Pi * 0.5f;
   for (int iLayer = 0; iLayer < trackParams[0].TrackletsPerRoad(); iLayer++) {
     trackParams[0].TrackletMaxDeltaZ[iLayer] = trackParams[0].LayerZ[iLayer + 1]; // trackParams[0].TrackletMaxDeltaZ[iLayer] = 10.f;
-    memParams[0].TrackletsMemoryCoefficients[iLayer] = 0.5f;
+    memParams[0].TrackletsMemoryCoefficients[iLayer] = 1.f;
   }
   for (int iLayer = 0; iLayer < trackParams[0].CellsPerRoad(); iLayer++) {
     trackParams[0].CellMaxDCA[iLayer] = 10000.f;  //cm
