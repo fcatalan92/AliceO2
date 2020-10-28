@@ -53,10 +53,10 @@ using Vertex = o2::dataformats::Vertex<o2::dataformats::TimeStamp<int>>;
 using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
 
 void run_trac_ca_its_cosmics(std::string path = "./",
-                            std::string outputfile = "o2trac_its.root",
-                            std::string inputClustersITS = "o2clus_its.root",
-                            std::string dictfile = "",
-                            std::string inputGRP = "o2sim_grp.root")
+                             std::string outputfile = "o2trac_its.root",
+                             std::string inputClustersITS = "o2clus_its.root",
+                             std::string dictfile = "",
+                             std::string inputGRP = "o2sim_grp.root")
 {
 
   gSystem->Load("libO2ITStracking.so");
@@ -87,7 +87,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   }
   double origD[3] = {0., 0., 0.};
   tracker.setBz(field->getBz(origD));
-  std::cout<<"Magnetic field: "<<field->getBz(origD)<<std::endl;
+  std::cout << "Magnetic field: " << field->getBz(origD) << std::endl;
 
   bool isITS = grp->isDetReadOut(o2::detectors::DetID::ITS);
   if (!isITS) {
@@ -100,7 +100,6 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   auto gman = o2::its::GeometryTGeo::Instance();
   gman->fillMatrixCache(o2::math_utils::bit2Mask(o2::math_utils::TransformType::T2L, o2::math_utils::TransformType::T2GRot,
                                                  o2::math_utils::TransformType::L2G)); // request cached transforms
-
 
   //>>>---------- attach input data --------------->>>
   TChain itsClusters("o2sim");
@@ -171,7 +170,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
 
   // debug and info
   int roFrameCounter{0};
-  int numTotTracks{0}; 
+  int numTotTracks{0};
   std::vector<double> ncls;
   std::vector<double> time;
 
@@ -184,8 +183,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
     memParams[0].TrackletsMemoryCoefficients[iLayer] = 1.f;
   }
   for (int iLayer = 0; iLayer < trackParams[0].CellsPerRoad(); iLayer++) {
-    trackParams[0].CellMaxDCA[iLayer] = 10000.f;  //cm
-    trackParams[0].CellMaxDeltaZ[iLayer] = 10000.f;  //cm
+    trackParams[0].CellMaxDCA[iLayer] = 10000.f;    //cm
+    trackParams[0].CellMaxDeltaZ[iLayer] = 10000.f; //cm
     memParams[0].CellsMemoryCoefficients[iLayer] = 0.001f;
   }
 
@@ -193,22 +192,22 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   int numEvents = itsClusters.GetEntries();
   // int numEvents = 1;
 
-  for(int ev{0}; ev < numEvents; ev++) {
+  for (int ev{0}; ev < numEvents; ev++) {
     itsClusters.GetEntry(ev);
     gsl::span<const unsigned char> patt(patterns->data(), patterns->size());
     auto pattIt = patt.begin();
     auto clSpan = gsl::span(cclusters->data(), cclusters->size());
 
     for (auto& rof : *rofs) {
-      if(roFrameCounter % 10000000 == 0) {
-        std::cout<<"PROCESSING ROF: "<<roFrameCounter<<std::endl;
+      if (roFrameCounter % 10000000 == 0) {
+        std::cout << "PROCESSING ROF: " << roFrameCounter << std::endl;
       }
       roFrameCounter++;
 
       if (rof.getNEntries() == 0) {
         continue;
       }
-      
+
       auto start = std::chrono::steady_clock::now();
       auto it = pattIt;
       o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
@@ -218,7 +217,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
       dummyVtx.setTimeStamp(event.getROFrameId());
       // std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
       event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
-      
+
       trackClIdx.clear();
       tracksITS.clear();
       tracker.clustersToTracks(event);
@@ -254,7 +253,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   graph->Draw("AP");
 
   std::cout << "\nTracks/Frames: " << numTotTracks << '/' << roFrameCounter << std::endl;
-  std::cout << "Rate: " << numTotTracks/22e-6/roFrameCounter << " (tracks/sec)\n";
+  std::cout << "Rate: " << numTotTracks / 22e-6 / roFrameCounter << " (tracks/sec)\n";
 }
 
 #endif
