@@ -179,8 +179,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   trackParams[0].MinTrackLength = 3;
   trackParams[0].TrackletMaxDeltaPhi = o2::its::constants::math::Pi * 0.5f;
   for (int iLayer = 0; iLayer < trackParams[0].TrackletsPerRoad(); iLayer++) {
-    trackParams[0].TrackletMaxDeltaZ[iLayer] = trackParams[0].LayerZ[iLayer + 1]; // trackParams[0].TrackletMaxDeltaZ[iLayer] = 10.f;
-    memParams[0].TrackletsMemoryCoefficients[iLayer] = 1.f;
+    trackParams[0].TrackletMaxDeltaZ[iLayer] = 100.f; //cm
+    memParams[0].TrackletsMemoryCoefficients[iLayer] = 0.5f;
   }
   for (int iLayer = 0; iLayer < trackParams[0].CellsPerRoad(); iLayer++) {
     trackParams[0].CellMaxDCA[iLayer] = 10000.f;    //cm
@@ -213,10 +213,7 @@ void run_trac_ca_its_cosmics(std::string path = "./",
       o2::its::ioutils::loadROFrameData(rof, event, clSpan, pattIt, dict, labels);
 
       // define a dummy vertex (0,0,0)
-      Vertex dummyVtx = Vertex(o2::math_utils::Point3D<float>(0., 0., 0.), std::array<float, 6>{0., 0., 0., 0., 0., 0.}, 50, 0.);
-      dummyVtx.setTimeStamp(event.getROFrameId());
-      // std::cout << " - Dummy vertex: x = " << dummyVtx.getX() << " y = " << dummyVtx.getY() << " x = " << dummyVtx.getZ() << std::endl;
-      event.addPrimaryVertex(dummyVtx.getX(), dummyVtx.getY(), dummyVtx.getZ());
+      event.addPrimaryVertex(0.f, 0.f, 0.f);
 
       trackClIdx.clear();
       tracksITS.clear();
