@@ -107,12 +107,11 @@ void TrackerDPL::init(InitContext& ic)
       mRunVertexer = false;
       trackParams.resize(1);
       memParams.resize(1);
-      trackParams[0].MinTrackLength = 4;
+      trackParams[0].MinTrackLength = 3;
       trackParams[0].TrackletMaxDeltaPhi = o2::its::constants::math::Pi * 0.5f;
       for (int iLayer = 0; iLayer < o2::its::constants::its2::TrackletsPerRoad; iLayer++) {
-        trackParams[0].TrackletMaxDeltaZ[iLayer] = o2::its::constants::its2::LayersZCoordinate()[iLayer + 1];
-        memParams[0].TrackletsMemoryCoefficients[iLayer] = 0.5f;
-        // trackParams[0].TrackletMaxDeltaZ[iLayer] = 10.f;
+        trackParams[0].TrackletMaxDeltaZ[iLayer] = 10000.f; //cm
+        memParams[0].TrackletsMemoryCoefficients[iLayer] = 1.f;
       }
       for (int iLayer = 0; iLayer < o2::its::constants::its2::CellsPerRoad; iLayer++) {
         trackParams[0].CellMaxDCA[iLayer] = 10000.f;    //cm

@@ -53,9 +53,9 @@ using Vertex = o2::dataformats::Vertex<o2::dataformats::TimeStamp<int>>;
 using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
 
 void run_trac_ca_its_cosmics(std::string path = "./",
-                             std::string outputfile = "o2trac_its.root",
+                             std::string outputfile = "o2trac_its_cosmics.root",
                              std::string inputClustersITS = "o2clus_its.root",
-                             std::string dictfile = "",
+                             std::string dictfile = "ITSdictionary.bin",
                              std::string inputGRP = "o2sim_grp.root")
 {
 
@@ -179,8 +179,8 @@ void run_trac_ca_its_cosmics(std::string path = "./",
   trackParams[0].MinTrackLength = 3;
   trackParams[0].TrackletMaxDeltaPhi = o2::its::constants::math::Pi * 0.5f;
   for (int iLayer = 0; iLayer < trackParams[0].TrackletsPerRoad(); iLayer++) {
-    trackParams[0].TrackletMaxDeltaZ[iLayer] = 100.f; //cm
-    memParams[0].TrackletsMemoryCoefficients[iLayer] = 0.5f;
+    trackParams[0].TrackletMaxDeltaZ[iLayer] = 10000.f; //cm
+    memParams[0].TrackletsMemoryCoefficients[iLayer] = 1.f;
   }
   for (int iLayer = 0; iLayer < trackParams[0].CellsPerRoad(); iLayer++) {
     trackParams[0].CellMaxDCA[iLayer] = 10000.f;    //cm
