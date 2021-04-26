@@ -236,11 +236,11 @@ void Tracker::findTracks(const ROframe& event)
   tracks.reserve(mPrimaryVertexContext->getRoads().size());
 
 #ifdef CA_DEBUG
-  std::vector<int> roadCounters(mTrkParams[0].NLayers - 3, 0);
-  std::vector<int> fitCounters(mTrkParams[0].NLayers - 3, 0);
-  std::vector<int> backpropagatedCounters(mTrkParams[0].NLayers - 3, 0);
-  std::vector<int> refitCounters(mTrkParams[0].NLayers - 3, 0);
-  std::vector<int> nonsharingCounters(mTrkParams[0].NLayers - 3, 0);
+  std::vector<int> roadCounters(mTrkParams[0].NLayers - 2, 0);
+  std::vector<int> fitCounters(mTrkParams[0].NLayers - 2, 0);
+  std::vector<int> backpropagatedCounters(mTrkParams[0].NLayers - 2, 0);
+  std::vector<int> refitCounters(mTrkParams[0].NLayers - 2, 0);
+  std::vector<int> nonsharingCounters(mTrkParams[0].NLayers - 2, 0);
 #endif
 
   for (auto& road : mPrimaryVertexContext->getRoads()) {
@@ -265,7 +265,7 @@ void Tracker::findTracks(const ROframe& event)
     }
 
     CA_DEBUGGER(assert(nClusters >= mTrkParams[0].MinTrackLength));
-    CA_DEBUGGER(roadCounters[nClusters - 4]++);
+    CA_DEBUGGER(roadCounters[nClusters - 3]++);
 
     if (lastCellLevel == constants::its::UnusedIndex) {
       continue;
@@ -294,23 +294,23 @@ void Tracker::findTracks(const ROframe& event)
     if (!fitSuccess) {
       continue;
     }
-    CA_DEBUGGER(fitCounters[nClusters - 4]++);
+#ifdef CA_DEBUG
+    mDebugger->dumpTrackToBranchWithInfo("testBranch", temporaryTrack, event, mPrimaryVertexContext, true);
+#endif
+    CA_DEBUGGER(fitCounters[nClusters - 3]++);
     temporaryTrack.resetCovariance();
     fitSuccess = fitTrack(event, temporaryTrack, 0, mTrkParams[0].NLayers, 1, mTrkParams[0].FitIterationMaxChi2[0]);
     if (!fitSuccess) {
       continue;
     }
-    CA_DEBUGGER(backpropagatedCounters[nClusters - 4]++);
+    CA_DEBUGGER(backpropagatedCounters[nClusters - 3]++);
     temporaryTrack.getParamOut() = temporaryTrack;
     temporaryTrack.resetCovariance();
     fitSuccess = fitTrack(event, temporaryTrack, mTrkParams[0].NLayers - 1, -1, -1, mTrkParams[0].FitIterationMaxChi2[1]);
-#ifdef CA_DEBUG
-    mDebugger->dumpTrackToBranchWithInfo("testBranch", temporaryTrack, event, mPrimaryVertexContext, true);
-#endif
     if (!fitSuccess) {
       continue;
     }
-    CA_DEBUGGER(refitCounters[nClusters - 4]++);
+    CA_DEBUGGER(refitCounters[nClusters - 3]++);
     tracks.emplace_back(temporaryTrack);
     CA_DEBUGGER(assert(nClusters == temporaryTrack.getNumberOfClusters()));
   }
@@ -367,22 +367,22 @@ void Tracker::findTracks(const ROframe& event)
   }
 
 #ifdef CA_DEBUG
-  std::cout << "+++ Found candidates with 4, 5, 6 and 7 clusters:\t";
+  std::cout << "+++ Found candidates with 3, 4, 5, 6 and 7 clusters:\t";
   for (int count : roadCounters)
     std::cout << count << "\t";
   std::cout << std::endl;
 
-  std::cout << "+++ Fitted candidates with 4, 5, 6 and 7 clusters:\t";
+  std::cout << "+++ Fitted candidates with 3, 4, 5, 6 and 7 clusters:\t";
   for (int count : fitCounters)
     std::cout << count << "\t";
   std::cout << std::endl;
 
-  std::cout << "+++ Backprop candidates with 4, 5, 6 and 7 clusters:\t";
+  std::cout << "+++ Backprop candidates with 3, 4, 5, 6 and 7 clusters:\t";
   for (int count : backpropagatedCounters)
     std::cout << count << "\t";
   std::cout << std::endl;
 
-  std::cout << "+++ Refitted candidates with 4, 5, 6 and 7 clusters:\t";
+  std::cout << "+++ Refitted candidates with 3, 4, 5, 6 and 7 clusters:\t";
   for (int count : refitCounters)
     std::cout << count << "\t";
   std::cout << std::endl;
