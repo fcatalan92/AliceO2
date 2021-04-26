@@ -34,7 +34,7 @@ namespace its
 namespace constants
 {
 
-constexpr bool DoTimeBenchmarks = true;
+constexpr bool DoTimeBenchmarks = false;
 
 namespace math
 {
